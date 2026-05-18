@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: Email Service Platform API
+  version: 1.0.0
+  description: Centralized email microservice API
+
+servers:
+  - url: http://localhost:8000
+
+security:
+  - AppKey: []
+
+components:
+  securitySchemes:
+    AppKey:
+      type: apiKey
+      in: header
+      name: X-APP-KEY
+
+paths:
+  /api/emails/send:
+    post:
+      summary: Queue an email for delivery
+      tags: [Emails]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to, subject]
+              properties:
+                to:
+                  type: array
+                  items:
+                    type: string
+                    format: email
+                subject:
+                  type: string
+                html:
+                  type: string
+                priority:
+                  type: string
+                  enum: [high, default, low, bulk]
+                type:
+                  type: string
+                  enum: [transactional, marketing, notification, system]
+      responses:
+        '202':
+          description: Email queued
+
+  /api/emails/{id}:
+    get:
+      summary: Get email log status
+      tags: [Emails]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Email log details
+
+  /api/providers/health:
+    get:
+      summary: Provider health status
+      tags: [Providers]
+      responses:
+        '200':
+          description: Health data
+
+  /api/metrics:
+    get:
+      summary: Application metrics
+      tags: [Metrics]
+      responses:
+        '200':
+          description: Metrics data

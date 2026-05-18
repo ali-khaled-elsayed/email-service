@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Email Service Platform API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "app_key", "value": "construction_app" }
+  ],
+  "item": [
+    {
+      "name": "Send Email",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-APP-KEY", "value": "{{app_key}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": [\"user@example.com\"],\n  \"subject\": \"Invoice Created\",\n  \"html\": \"<h1>Hello</h1><p>Your invoice was created.</p>\",\n  \"priority\": \"high\",\n  \"type\": \"transactional\",\n  \"meta\": { \"invoice_id\": 55 }\n}"
+        },
+        "url": "{{base_url}}/api/emails/send"
+      }
+    },
+    {
+      "name": "Get Email Status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
+        "url": "{{base_url}}/api/emails/1"
+      }
+    },
+    {
+      "name": "Provider Health",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
+        "url": "{{base_url}}/api/providers/health"
+      }
+    },
+    {
+      "name": "Metrics",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
+        "url": "{{base_url}}/api/metrics"
+      }
+    }
+  ]
+}
