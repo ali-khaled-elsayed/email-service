@@ -13,6 +13,12 @@ class RetryManagerServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \App\Modules\EmailService\Models\EmailSetting::instance();
+    }
+
     public function test_should_retry_respects_max_attempts(): void
     {
         $service = app(RetryManagerService::class);

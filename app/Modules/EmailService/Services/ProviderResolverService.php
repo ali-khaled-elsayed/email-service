@@ -19,13 +19,6 @@ class ProviderResolverService
 
     public function resolve(Application $application, SendEmailDTO $dto, int $retryAttempt = 0): ?Provider
     {
-        if ($dto->providerSlug) {
-            $override = $this->providerRepository->findBySlug($dto->providerSlug);
-            if ($override?->isAvailable()) {
-                return $override;
-            }
-        }
-
         $rules = $application->getSetting('routing_rules', []);
         $typeRule = $rules[$dto->type->value] ?? null;
 

@@ -14,6 +14,7 @@ class RetryManagerService
 {
     public function __construct(
         private readonly EmailLogRepository $emailLogRepository,
+        private readonly EmailSettingsService $emailSettings,
     ) {}
 
     public function shouldRetry(EmailLog $emailLog, bool $retryable): bool
@@ -22,14 +23,12 @@ class RetryManagerService
             return false;
         }
 
-        return $emailLog->retry_count < config('email_service.max_attempts');
+        return $emailLog->retry_count < $this->emailSettings->getMaxAttempts();
     }
 
     public function getDelay(int $attemptNumber): int
     {
-        $delays = config('email_service.retry_delays');
-
-        return (int) ($delays[$attemptNumber] ?? end($delays));
+        return $this->emailSettings->getDelay($attemptNumber);
     }
 
     public function scheduleRetry(EmailLog $emailLog, string $exception, bool $retryable, int $providerId): void

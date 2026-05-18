@@ -30,7 +30,6 @@ class SendEmailRequest extends FormRequest
             'text' => ['sometimes', 'string'],
             'priority' => ['sometimes', 'in:high,default,low,bulk'],
             'type' => ['sometimes', 'in:transactional,marketing,notification,system'],
-            'provider' => ['sometimes', 'string'],
             'scheduled_at' => ['sometimes', 'nullable', 'date'],
             'attachments' => ['sometimes', 'array'],
             'attachments.*.name' => ['required_with:attachments', 'string'],

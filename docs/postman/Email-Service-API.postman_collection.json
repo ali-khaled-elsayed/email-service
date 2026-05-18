@@ -1,51 +1,113 @@
 {
   "info": {
-    "name": "Email Service Platform API",
+    "_postman_id": "email-service-api-collection",
+    "name": "Email Service API",
+    "description": "Quick-start Postman collection for the Email Service Platform.\n\n**Auth:** Collection uses `X-APP-KEY` = `{{app_key}}` (default: `construction_app` after seed).\n\n**Provider routing:** Mail provider is **not** sent in the API body. It is resolved from the Application (Filament → Applications): default provider, fallback, and per-`type` routing rules.\n\nImport `Email-Service-Local.postman_environment.json` and select the environment before running requests.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-APP-KEY", "type": "string" },
+      { "key": "value", "value": "{{app_key}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
   },
   "variable": [
     { "key": "base_url", "value": "http://localhost:8000" },
-    { "key": "app_key", "value": "construction_app" }
+    { "key": "app_key", "value": "construction_app" },
+    { "key": "email_log_id", "value": "1" }
   ],
   "item": [
     {
       "name": "Send Email",
       "request": {
         "method": "POST",
-        "header": [
-          { "key": "X-APP-KEY", "value": "{{app_key}}" },
-          { "key": "Content-Type", "value": "application/json" }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"to\": [\"user@example.com\"],\n  \"subject\": \"Invoice Created\",\n  \"html\": \"<h1>Hello</h1><p>Your invoice was created.</p>\",\n  \"priority\": \"high\",\n  \"type\": \"transactional\",\n  \"meta\": { \"invoice_id\": 55 }\n}"
         },
-        "url": "{{base_url}}/api/emails/send"
-      }
+        "url": "{{base_url}}/api/emails/send",
+        "description": "Queue one email. Provider is chosen from the Application config (not the request body). Use `type` to match routing rules (e.g. transactional → smtp_primary for seeded app)."
+      },
+      "response": []
+    },
+    {
+      "name": "Schedule Email",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"to\": [\"user@example.com\"],\n  \"subject\": \"Reminder\",\n  \"html\": \"<p>Scheduled reminder</p>\",\n  \"scheduled_at\": \"2026-12-31T09:00:00+00:00\",\n  \"type\": \"notification\"\n}"
+        },
+        "url": "{{base_url}}/api/emails/schedule",
+        "description": "Same body as send; `scheduled_at` is required (future ISO 8601)."
+      },
+      "response": []
+    },
+    {
+      "name": "Bulk Send",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"recipients\": [\n    { \"email\": \"a@example.com\" },\n    { \"email\": \"b@example.com\" }\n  ],\n  \"subject\": \"Newsletter\",\n  \"html\": \"<p>Monthly update</p>\",\n  \"type\": \"marketing\"\n}"
+        },
+        "url": "{{base_url}}/api/emails/bulk"
+      },
+      "response": []
     },
     {
       "name": "Get Email Status",
       "request": {
         "method": "GET",
-        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
-        "url": "{{base_url}}/api/emails/1"
-      }
+        "header": [],
+        "url": "{{base_url}}/api/emails/{{email_log_id}}",
+        "description": "Set `email_log_id` from a prior send response, or replace in the URL."
+      },
+      "response": []
+    },
+    {
+      "name": "Retry Email",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/emails/{{email_log_id}}/retry",
+        "description": "Only when status is failed or bounced."
+      },
+      "response": []
+    },
+    {
+      "name": "Cancel Email",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/api/emails/{{email_log_id}}/cancel",
+        "description": "Only when status is pending, queued, or scheduled."
+      },
+      "response": []
     },
     {
       "name": "Provider Health",
       "request": {
         "method": "GET",
-        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
-        "url": "{{base_url}}/api/providers/health"
-      }
+        "header": [],
+        "url": "{{base_url}}/api/providers/health",
+        "description": "Monitor provider health (admin/ops). Not used to pick provider on send — that is Application config."
+      },
+      "response": []
     },
     {
       "name": "Metrics",
       "request": {
         "method": "GET",
-        "header": [{ "key": "X-APP-KEY", "value": "{{app_key}}" }],
+        "header": [],
         "url": "{{base_url}}/api/metrics"
-      }
+      },
+      "response": []
     }
   ]
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\EmailService\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Modules\EmailService\Filament\Resources\FailedAttemptResource\Pages;
 use App\Modules\EmailService\Models\FailedEmailAttempt;
 use BackedEnum;
@@ -50,5 +51,10 @@ class FailedAttemptResource extends Resource
         return [
             'index' => Pages\ListFailedAttempts::route('/'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can(Permission::ViewFailedAttempts->value) ?? false;
     }
 }

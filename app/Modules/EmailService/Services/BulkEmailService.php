@@ -50,7 +50,6 @@ class BulkEmailService
                     bcc: $dto->bcc,
                     priority: EmailPriority::Bulk,
                     type: $dto->type,
-                    providerSlug: $dto->providerSlug,
                     scheduledAt: $dto->scheduledAt,
                     attachments: $dto->attachments,
                     meta: $dto->meta,

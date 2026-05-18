@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\EmailService\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Modules\EmailService\Enums\ApplicationStatus;
 use App\Modules\EmailService\Filament\Resources\ApplicationResource\Pages;
 use App\Modules\EmailService\Models\Application;
 use App\Modules\EmailService\Models\Provider;
 use BackedEnum;
-use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -30,21 +31,60 @@ class ApplicationResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
+        $providerOptions = fn () => Provider::query()->orderBy('name')->pluck('name', 'slug');
+
         return $schema->components([
-            TextInput::make('name')->required()->maxLength(255),
-            TextInput::make('app_key')->required()->unique(ignoreRecord: true)->maxLength(255),
-            Select::make('status')->options(ApplicationStatus::class)->required(),
-            Select::make('default_provider_id')
-                ->label('Default Provider')
-                ->relationship('defaultProvider', 'name')
-                ->searchable()
-                ->preload(),
-            Select::make('fallback_provider_id')
-                ->label('Fallback Provider')
-                ->options(fn () => Provider::query()->pluck('name', 'id'))
-                ->searchable(),
-            TextInput::make('rate_limit')->numeric()->default(100)->required(),
-            KeyValue::make('settings')->columnSpanFull(),
+            Section::make('Application')
+                ->schema([
+                    TextInput::make('name')->required()->maxLength(255),
+                    TextInput::make('app_key')->required()->unique(ignoreRecord: true)->maxLength(255),
+                    Select::make('status')->options(ApplicationStatus::class)->required(),
+                    TextInput::make('rate_limit')->numeric()->default(100)->required(),
+                ])
+                ->columns(2),
+
+            Section::make('Provider routing')
+                ->description('Provider selection is configured per application. API send requests do not accept a provider override.')
+                ->schema([
+                    Select::make('default_provider_id')
+                        ->label('Default provider')
+                        ->relationship('defaultProvider', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required(),
+                    Select::make('fallback_provider_id')
+                        ->label('Fallback provider')
+                        ->relationship('fallbackProvider', 'name')
+                        ->searchable()
+                        ->preload(),
+                    Select::make('settings.routing_rules.transactional')
+                        ->label('Transactional emails')
+                        ->options($providerOptions)
+                        ->nullable()
+                        ->helperText('Optional override by email type. Uses default provider when empty.'),
+                    Select::make('settings.routing_rules.marketing')
+                        ->label('Marketing emails')
+                        ->options($providerOptions)
+                        ->nullable(),
+                    Select::make('settings.routing_rules.notification')
+                        ->label('Notification emails')
+                        ->options($providerOptions)
+                        ->nullable(),
+                    Select::make('settings.routing_rules.system')
+                        ->label('System emails')
+                        ->options($providerOptions)
+                        ->nullable(),
+                ])
+                ->columns(2),
+
+            Section::make('Other settings')
+                ->schema([
+                    TextInput::make('settings.webhook_url')
+                        ->label('Webhook URL')
+                        ->url()
+                        ->nullable()
+                        ->columnSpanFull(),
+                ]),
         ]);
     }
 
@@ -56,6 +96,7 @@ class ApplicationResource extends Resource
                 TextColumn::make('app_key')->copyable()->searchable(),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('defaultProvider.name')->label('Default Provider'),
+                TextColumn::make('fallbackProvider.name')->label('Fallback Provider'),
                 TextColumn::make('rate_limit'),
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
@@ -69,5 +110,10 @@ class ApplicationResource extends Resource
             'create' => Pages\CreateApplication::route('/create'),
             'edit' => Pages\EditApplication::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can(Permission::ManageApplications->value) ?? false;
     }
 }

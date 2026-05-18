@@ -47,7 +47,6 @@ class EmailDispatcherService
                 bcc: $dto->bcc,
                 priority: $dto->priority,
                 type: $dto->type,
-                providerSlug: $dto->providerSlug,
                 scheduledAt: $dto->scheduledAt,
                 attachments: $dto->attachments,
                 meta: $dto->meta,
@@ -67,7 +66,6 @@ class EmailDispatcherService
             bcc: $dto->bcc,
             priority: $dto->priority,
             type: $dto->type,
-            providerSlug: $dto->providerSlug,
             scheduledAt: $dto->scheduledAt,
             attachments: $attachments,
             meta: $dto->meta,
@@ -108,7 +106,12 @@ class EmailDispatcherService
 
         $provider = $emailLog->provider ?? $this->providerResolver->resolve(
             $emailLog->application,
-            new SendEmailDTO(to: $emailLog->to, subject: $emailLog->subject, html: $emailLog->html),
+            new SendEmailDTO(
+                to: $emailLog->to,
+                subject: $emailLog->subject,
+                html: $emailLog->html,
+                type: $emailLog->type,
+            ),
             $emailLog->retry_count,
         );
 

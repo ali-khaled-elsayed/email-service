@@ -39,6 +39,7 @@ class EmailServiceServiceProvider extends ServiceProvider
         $this->app->singleton(PostmarkProvider::class);
         $this->app->singleton(BrevoProvider::class);
         $this->app->singleton(ResendProvider::class);
+        $this->app->singleton(Services\EmailSettingsService::class);
     }
 
     public function boot(): void
@@ -54,6 +55,12 @@ class EmailServiceServiceProvider extends ServiceProvider
             $schedule = $this->app->make(Schedule::class);
             $schedule->command('email:health-check')->everyFiveMinutes();
             $schedule->command('email:process-scheduled')->everyMinute();
+
+            try {
+                $this->app->make(Services\EmailSettingsService::class)->syncRuntimeConfig();
+            } catch (\Throwable) {
+                // Table may not exist before migrations.
+            }
         });
     }
 }

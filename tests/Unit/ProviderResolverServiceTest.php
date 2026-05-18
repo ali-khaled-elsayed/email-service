@@ -23,7 +23,7 @@ class ProviderResolverServiceTest extends TestCase
         $this->seed(EmailServiceSeeder::class);
     }
 
-    public function test_resolves_provider_override(): void
+    public function test_resolves_routing_rule_by_email_type(): void
     {
         $app = Application::query()->where('app_key', 'construction_app')->first();
         $resolver = app(ProviderResolverService::class);
@@ -32,7 +32,7 @@ class ProviderResolverServiceTest extends TestCase
             to: ['test@example.com'],
             subject: 'Test',
             html: '<p>Test</p>',
-            providerSlug: 'smtp_primary',
+            type: EmailType::Transactional,
         );
 
         $provider = $resolver->resolve($app, $dto);

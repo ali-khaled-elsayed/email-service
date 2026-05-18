@@ -1,0 +1,389 @@
+{
+  "info": {
+    "_postman_id": "email-service-testing-collection",
+    "name": "Email Service API — Full Testing",
+    "description": "Complete Postman collection for the Email Service Platform API.\n\n**Setup**\n1. Import this collection and `Email-Service-Local.postman_environment.json`\n2. Select the **Email Service — Local** environment\n3. Run `php artisan migrate --seed` for test data\n4. Default `app_key`: `construction_app`\n5. Configure providers in Filament → **Applications** (default, fallback, routing by email type)\n\n**Provider routing (important)**\n- Do **not** send `provider` in the JSON body — it is not accepted.\n- Provider is resolved from the Application linked to `X-APP-KEY`.\n- Use `type` (`transactional`, `marketing`, etc.) to match routing rules.\n- After send, check `provider_id` via **Get email status**.\n\n**Variables**\n- `base_url` — API host (default http://localhost:8000)\n- `app_key` — X-APP-KEY header value\n- `email_log_id` — auto-set after Send / Schedule / Bulk\n\nSee `docs/api/API_REFERENCE.md` for full field documentation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-APP-KEY", "type": "string" },
+      { "key": "value", "value": "{{app_key}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "app_key", "value": "construction_app" },
+    { "key": "email_log_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Emails",
+      "item": [
+        {
+          "name": "Send — minimal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_id) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_id));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_id));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202 Accepted', () => pm.response.to.have.status(202));",
+                  "pm.test('success is true', () => pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"customer@example.com\"],\n  \"subject\": \"Welcome\",\n  \"html\": \"<h1>Hello</h1><p>Thanks for signing up.</p>\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Minimal send: to, subject, html only."
+          }
+        },
+        {
+          "name": "Send — full payload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_id) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_id));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_id));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"user@example.com\", \"manager@example.com\"],\n  \"cc\": [\"archive@example.com\"],\n  \"bcc\": null,\n  \"subject\": \"Invoice #1042\",\n  \"html\": \"<h1>Invoice</h1><p>Please find details below.</p>\",\n  \"text\": \"Invoice - Please find details below.\",\n  \"priority\": \"high\",\n  \"type\": \"transactional\",\n  \"scheduled_at\": null,\n  \"meta\": {\n    \"invoice_id\": 1042,\n    \"user_id\": 7,\n    \"source\": \"billing-service\"\n  },\n  \"idempotency_key\": \"postman-test-{{$timestamp}}\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "All optional fields except attachments. Provider is **not** in the body — configured on the Application in admin (default + routing by `type`)."
+          }
+        },
+        {
+          "name": "Send — transactional (app routing)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_id) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_id));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_id));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"routing-test@example.com\"],\n  \"subject\": \"Transactional routing test\",\n  \"html\": \"<p>Uses application routing_rules.transactional → smtp_primary (seeded).</p>\",\n  \"type\": \"transactional\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Seeded app `construction_app` routes `transactional` to `smtp_primary`. Run **Get email status** next to see `provider_id`."
+          }
+        },
+        {
+          "name": "Send — template",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_id) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_id));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_id));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"ahmed@example.com\"],\n  \"template\": \"invoice_created\",\n  \"template_data\": {\n    \"name\": \"Ahmed\",\n    \"invoice_id\": \"INV-9921\"\n  },\n  \"priority\": \"default\",\n  \"type\": \"notification\",\n  \"meta\": { \"department\": \"finance\" }\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Uses seeded template slug `invoice_created`."
+          }
+        },
+        {
+          "name": "Send — idempotency (run twice)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Has email_log_id', () => pm.expect(pm.response.json().email_log_id).to.be.a('number');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"test@example.com\"],\n  \"subject\": \"Idempotency test\",\n  \"html\": \"<p>Same key = same log</p>\",\n  \"idempotency_key\": \"postman-idempotency-fixed-key\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Run this request twice — second call returns same email_log_id without duplicate row."
+          }
+        },
+        {
+          "name": "Schedule email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_id) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_id));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_id));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"reminder@example.com\"],\n  \"subject\": \"Payment due tomorrow\",\n  \"html\": \"<p>Your payment is due soon.</p>\",\n  \"scheduled_at\": \"2026-12-31T09:00:00+00:00\",\n  \"priority\": \"low\",\n  \"type\": \"notification\",\n  \"meta\": { \"subscription_id\": 88 }\n}"
+            },
+            "url": "{{base_url}}/api/emails/schedule",
+            "description": "`scheduled_at` is required and must be in the future."
+          }
+        },
+        {
+          "name": "Bulk send",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 202) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.email_log_ids && json.email_log_ids.length) {",
+                  "        pm.collectionVariables.set('email_log_id', String(json.email_log_ids[0]));",
+                  "        pm.environment.set('email_log_id', String(json.email_log_ids[0]));",
+                  "    }",
+                  "}",
+                  "pm.test('Status 202', () => pm.response.to.have.status(202));",
+                  "pm.test('count matches ids', () => {",
+                  "    const j = pm.response.json();",
+                  "    pm.expect(j.count).to.eql(j.email_log_ids.length);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\n    {\n      \"email\": \"alice@example.com\",\n      \"variables\": { \"name\": \"Alice\", \"invoice_id\": \"A-100\" },\n      \"meta\": { \"segment\": \"premium\" }\n    },\n    {\n      \"email\": \"bob@example.com\",\n      \"variables\": { \"name\": \"Bob\", \"invoice_id\": \"B-200\" },\n      \"meta\": { \"segment\": \"standard\" }\n    }\n  ],\n  \"template\": \"invoice_created\",\n  \"type\": \"transactional\",\n  \"meta\": { \"campaign\": \"postman-bulk-test\" }\n}"
+            },
+            "url": "{{base_url}}/api/emails/bulk"
+          }
+        },
+        {
+          "name": "Get email status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data.id', () => pm.expect(pm.response.json().data.id).to.eql(Number(pm.variables.get('email_log_id'))));",
+                  "pm.test('Provider assigned by application', () => pm.expect(pm.response.json().data.provider_id).to.be.a('number');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/emails/{{email_log_id}}",
+            "description": "Uses `email_log_id` from last send/schedule/bulk. `provider_id` reflects Application routing (not a request field). Set `email_log_id` manually if needed."
+          }
+        },
+        {
+          "name": "Retry email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/api/emails/{{email_log_id}}/retry",
+            "description": "Only works when status is `failed` or `bounced`."
+          }
+        },
+        {
+          "name": "Cancel email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/api/emails/{{email_log_id}}/cancel",
+            "description": "Only works when status is `pending`, `queued`, or `scheduled`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Providers & Metrics",
+      "item": [
+        {
+          "name": "Provider health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has providers array', () => pm.expect(pm.response.json().providers).to.be.an('array');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/providers/health"
+          }
+        },
+        {
+          "name": "Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has metrics', () => pm.expect(pm.response.json().metrics).to.be.an('object');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/metrics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth & validation (errors)",
+      "item": [
+        {
+          "name": "Send — missing X-APP-KEY",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"test@example.com\"],\n  \"subject\": \"Test\",\n  \"html\": \"<p>Test</p>\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Expect HTTP 401."
+          }
+        },
+        {
+          "name": "Send — invalid app key",
+          "request": {
+            "auth": {
+              "type": "apikey",
+              "apikey": [
+                { "key": "key", "value": "X-APP-KEY", "type": "string" },
+                { "key": "value", "value": "invalid_key_12345", "type": "string" },
+                { "key": "in", "value": "header", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": [\"test@example.com\"],\n  \"subject\": \"Test\",\n  \"html\": \"<p>Test</p>\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Expect HTTP 401."
+          }
+        },
+        {
+          "name": "Send — validation error (422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Missing to field\"\n}"
+            },
+            "url": "{{base_url}}/api/emails/send",
+            "description": "Expect HTTP 422 with errors.to."
+          }
+        },
+        {
+          "name": "Get email — not found (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/emails/999999"
+          }
+        }
+      ]
+    }
+  ]
+}

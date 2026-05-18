@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\EmailService\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Modules\EmailService\Filament\Resources\EmailLogResource\Pages;
 use App\Modules\EmailService\Jobs\SendEmailJob;
 use App\Modules\EmailService\Models\EmailLog;
@@ -13,7 +14,7 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -79,5 +80,15 @@ class EmailLogResource extends Resource
             'index' => Pages\ListEmailLogs::route('/'),
             'view' => Pages\ViewEmailLog::route('/{record}'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can(Permission::ViewEmailLogs->value) ?? false;
+    }
+
+    public static function canView($record): bool
+    {
+        return static::canViewAny();
     }
 }

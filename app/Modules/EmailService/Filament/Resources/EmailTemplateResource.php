@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\EmailService\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Modules\EmailService\Filament\Resources\EmailTemplateResource\Pages;
 use App\Modules\EmailService\Models\EmailTemplate;
 use BackedEnum;
@@ -56,5 +57,10 @@ class EmailTemplateResource extends Resource
             'create' => Pages\CreateEmailTemplate::route('/create'),
             'edit' => Pages\EditEmailTemplate::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can(Permission::ManageEmailTemplates->value) ?? false;
     }
 }

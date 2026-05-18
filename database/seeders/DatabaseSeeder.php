@@ -15,12 +15,18 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@admin.com',
-            'password' => bcrypt('admin'),
+        $this->call([
+            RolePermissionSeeder::class,
+            EmailSettingsSeeder::class,
+            EmailServiceSeeder::class,
         ]);
 
-        $this->call(EmailServiceSeeder::class);
+        $admin = User::factory()->create([
+            'name' => 'Admin',
+            'email' => 'admin@admin.com',
+            'password' => 'admin',
+        ]);
+
+        $admin->assignRole(\App\Enums\Role::SuperAdmin->value);
     }
 }

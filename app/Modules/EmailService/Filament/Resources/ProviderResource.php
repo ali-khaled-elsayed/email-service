@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\EmailService\Filament\Resources;
 
+use App\Enums\Permission;
 use App\Modules\EmailService\Enums\HealthStatus;
 use App\Modules\EmailService\Enums\ProviderStatus;
 use App\Modules\EmailService\Enums\ProviderType;
@@ -72,5 +73,10 @@ class ProviderResource extends Resource
             'create' => Pages\CreateProvider::route('/create'),
             'edit' => Pages\EditProvider::route('/{record}/edit'),
         ];
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->can(Permission::ManageProviders->value) ?? false;
     }
 }
