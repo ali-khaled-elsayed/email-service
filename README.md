@@ -55,11 +55,28 @@ curl -X POST http://localhost:8000/api/emails/send \
 php artisan queue:work database --queue=emails-high,emails-default,emails-low,emails-bulk,emails-retry
 ```
 
-Or use Docker Compose:
+## Docker (Production)
+
+Full guide: [`docs/DOCKER.md`](docs/DOCKER.md)
 
 ```bash
+cp .env.docker.example .env
+# Set APP_KEY, passwords, APP_URL
+
+docker compose build
 docker compose up -d
+
+# Admin: http://localhost/admin
+# API:  http://localhost/api/emails/send
 ```
+
+Scale queue workers:
+
+```bash
+docker compose up -d --scale queue=3
+```
+
+Services: **app** (PHP-FPM), **nginx** (:80), **mysql**, **redis**, **queue** (Supervisor), **scheduler**.
 
 ## Architecture
 
@@ -88,6 +105,7 @@ php artisan test
 
 ## Documentation
 
+- **Docker deployment:** `docs/DOCKER.md`
 - OpenAPI: `docs/api/openapi.yaml`
 - Postman: `docs/postman/Email-Service-API.postman_collection.json`
 

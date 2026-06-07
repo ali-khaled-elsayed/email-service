@@ -1,63 +1,190 @@
+# Email Service Platform — Production Docker Compose
+#
+# Services: app (PHP-FPM), nginx, mysql, redis, queue (Supervisor), scheduler
+#
+# Quick start:
+#   cp .env.docker.example .env
+#   php artisan key:generate   # or set APP_KEY manually
+#   docker compose build
+#   docker compose up -d
+#
+# Scale queue workers:
+#   docker compose up -d --scale queue=3
+
+name: email-service
+
 services:
   app:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    ports:
-      - "8000:8000"
-    volumes:
-      - .:/var/www/html
+      target: app
+    image: email-service-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - APP_ENV=local
-      - APP_DEBUG=true
-      - DB_CONNECTION=mysql
-      - DB_HOST=mysql
-      - DB_DATABASE=email_service
-      - DB_USERNAME=email_service
-      - DB_PASSWORD=secret
-      - QUEUE_CONNECTION=database
+      APP_ENV: ${APP_ENV:-production}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      RUN_SEEDERS: ${RUN_SEEDERS:-false}
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
     depends_on:
-      - mysql
-    command: php artisan serve --host=0.0.0.0 --port=8000
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - email-service
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan --version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: nginx
+    image: email-service-nginx:latest
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - email-service
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1/up || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-secret}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-email_service}
+      MYSQL_USER: ${MYSQL_USER:-email_service}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-secret}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - email-service
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-connections=200
+      --innodb-buffer-pool-size=256M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - email-service
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   queue:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    volumes:
-      - .:/var/www/html
+      target: app
+    image: email-service-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - DB_CONNECTION=mysql
-      - DB_HOST=mysql
-      - DB_DATABASE=email_service
-      - DB_USERNAME=email_service
-      - DB_PASSWORD=secret
-      - QUEUE_CONNECTION=database
+      APP_ENV: ${APP_ENV:-production}
+      RUN_MIGRATIONS: "false"
+      QUEUE_WORKERS_HIGH: ${QUEUE_WORKERS_HIGH:-2}
+      QUEUE_WORKERS_DEFAULT: ${QUEUE_WORKERS_DEFAULT:-2}
+      QUEUE_WORKERS_LOW: ${QUEUE_WORKERS_LOW:-1}
+      QUEUE_WORKERS_BULK: ${QUEUE_WORKERS_BULK:-2}
+      QUEUE_WORKERS_RETRY: ${QUEUE_WORKERS_RETRY:-1}
+    volumes:
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
     depends_on:
-      - mysql
-    command: php artisan queue:work database --queue=emails-high,emails-default,emails-low,emails-bulk,emails-retry --sleep=3 --tries=1
+      app:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - email-service
+    command: ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "supervisorctl status | grep -q RUNNING || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   scheduler:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    volumes:
-      - .:/var/www/html
-    depends_on:
-      - mysql
-    command: php artisan schedule:work
-
-  mysql:
-    image: mysql:8.0
-    ports:
-      - "3306:3306"
+      target: app
+    image: email-service-app:latest
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      MYSQL_DATABASE: email_service
-      MYSQL_USER: email_service
-      MYSQL_PASSWORD: secret
-      MYSQL_ROOT_PASSWORD: root
+      APP_ENV: ${APP_ENV:-production}
+      RUN_MIGRATIONS: "false"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - app_storage:/var/www/html/storage/app
+      - app_logs:/var/www/html/storage/logs
+    depends_on:
+      app:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - email-service
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan schedule:list > /dev/null 2>&1 || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  email-service:
+    driver: bridge
 
 volumes:
   mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  app_storage:
+    driver: local
+  app_logs:
+    driver: local

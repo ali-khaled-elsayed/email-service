@@ -1,18 +1,118 @@
-FROM php:8.2-cli
+# =============================================================================
+# Multi-stage production Dockerfile — Laravel 11 + Filament v4
+# Targets: app (php-fpm), nginx, worker (queue/scheduler/cli)
+# =============================================================================
 
-RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip mbstring \
-    && rm -rf /var/lib/apt/lists/*
+# -----------------------------------------------------------------------------
+# Stage 1: Frontend assets (Vite / Filament)
+# -----------------------------------------------------------------------------
+FROM node:20-alpine AS frontend
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /app
 
-WORKDIR /var/www/html
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+COPY vite.config.js ./
+COPY resources ./resources
+COPY public ./public
+
+RUN npm run build
+
+# -----------------------------------------------------------------------------
+# Stage 2: Composer dependencies
+# -----------------------------------------------------------------------------
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-progress \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
 
 COPY . .
 
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
-EXPOSE 8000
+# -----------------------------------------------------------------------------
+# Stage 3: PHP application (FPM + CLI for workers)
+# -----------------------------------------------------------------------------
+FROM php:8.3-fpm-bookworm AS app
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+LABEL maintainer="Email Service Platform"
+LABEL org.opencontainers.image.title="email-service-app"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    unzip \
+    supervisor \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libicu-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" \
+        pdo_mysql \
+        zip \
+        mbstring \
+        intl \
+        bcmath \
+        opcache \
+        gd \
+        pcntl \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get purge -y --auto-remove git \
+    && rm -rf /var/lib/apt/lists/* /tmp/pear
+
+COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
+
+WORKDIR /var/www/html
+
+# Copy application with vendor and built assets
+COPY --from=vendor /app ./
+COPY --from=frontend /app/public/build ./public/build
+
+# Supervisor configs (used by queue container)
+COPY docker/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
+COPY docker/supervisor/conf.d/ /etc/supervisor/conf.d/
+
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+RUN mkdir -p /var/log/supervisor storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache /var/log/supervisor
+
+USER root
+
+EXPOSE 9000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD php artisan --version > /dev/null 2>&1 || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["php-fpm", "-F"]
+
+# -----------------------------------------------------------------------------
+# Stage 4: Nginx reverse proxy
+# -----------------------------------------------------------------------------
+FROM nginx:1.27-alpine AS nginx
+
+RUN apk add --no-cache curl
+
+COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=app /var/www/html/public /var/www/html/public
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://127.0.0.1/up || exit 1
