@@ -15,6 +15,7 @@ use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\HtmlString;
 
 class DynamicEmailMailable extends Mailable
 {
@@ -44,12 +45,29 @@ class DynamicEmailMailable extends Mailable
     public function content(): Content
     {
         $renderer = app(HtmlEmailRendererService::class);
-        $html = $renderer->render($this->emailLog);
 
         return new Content(
-            htmlString: $html,
-            text: $this->emailLog->text_content,
+            htmlString: $renderer->render($this->emailLog),
         );
+    }
+
+    /**
+     * Laravel Content::text expects a Blade view name, not raw plain text.
+     *
+     * @return string|array<string, \Illuminate\Contracts\Support\Htmlable|string|null>
+     */
+    protected function buildView()
+    {
+        if (! isset($this->html)) {
+            return parent::buildView();
+        }
+
+        return array_filter([
+            'html' => new HtmlString($this->html),
+            'text' => filled($this->emailLog->text_content)
+                ? new HtmlString($this->emailLog->text_content)
+                : null,
+        ]);
     }
 
     /**
