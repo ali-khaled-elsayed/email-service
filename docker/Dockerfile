@@ -1,6 +1,6 @@
 # =============================================================================
 # Multi-stage production Dockerfile — Laravel 11 + Filament v4
-# Targets: app (php-fpm), nginx, worker (queue/scheduler/cli)
+# Targets: app (php-fpm + worker/scheduler/cli), nginx
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -22,9 +22,17 @@ RUN npm run build
 # -----------------------------------------------------------------------------
 # Stage 2: Composer dependencies
 # -----------------------------------------------------------------------------
-FROM composer:2 AS vendor
+FROM php:8.3-cli-bookworm AS vendor
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 COPY composer.json composer.lock ./
 
@@ -34,11 +42,15 @@ RUN composer install \
     --no-progress \
     --no-scripts \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-req=ext-gd \
+    --ignore-platform-req=ext-intl \
+    --ignore-platform-req=ext-redis \
+    --ignore-platform-req=ext-zip
 
 COPY . .
 
-RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scripts
 
 # -----------------------------------------------------------------------------
 # Stage 3: PHP application (FPM + CLI for workers)
@@ -49,6 +61,8 @@ LABEL maintainer="Email Service Platform"
 LABEL org.opencontainers.image.title="email-service-app"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
     git \
     unzip \
     supervisor \
@@ -89,10 +103,11 @@ COPY docker/supervisor/conf.d/ /etc/supervisor/conf.d/
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-RUN mkdir -p /var/log/supervisor storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache /var/log/supervisor
+RUN mkdir -p /var/log/supervisor storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache public /var/log/supervisor \
+    && chmod -R ug+rwx storage bootstrap/cache /var/log/supervisor
 
-USER root
+USER www-data
 
 EXPOSE 9000
 
@@ -111,6 +126,8 @@ RUN apk add --no-cache curl
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=app /var/www/html/public /var/www/html/public
+RUN mkdir -p /var/www/html/storage/app/public \
+    && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage
 
 EXPOSE 80
 
