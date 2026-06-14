@@ -1,5 +1,8 @@
 # Docker — Production Deployment Guide
 
+Updated production guide: `docs/DEPLOYMENT.md`.
+Production readiness audit: `docs/PRODUCTION_AUDIT.md`.
+
 Complete guide for running the Email Service Platform (Laravel 11 + Filament v4) in Docker on a VPS or cloud server.
 
 ## Architecture
