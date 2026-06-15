@@ -73,6 +73,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
+    $PHPIZE_DEPS \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" \
         pdo_mysql \
@@ -83,9 +84,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         opcache \
         gd \
         pcntl \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apt-get purge -y --auto-remove git \
+    && curl -fsSL https://github.com/phpredis/phpredis/archive/refs/tags/6.2.0.tar.gz -o /tmp/redis.tar.gz \
+    && mkdir -p /usr/src/php/ext/redis \
+    && tar xf /tmp/redis.tar.gz -C /usr/src/php/ext/redis --strip-components=1 \
+    && rm /tmp/redis.tar.gz \
+    && docker-php-ext-install redis \
+    && apt-get purge -y --auto-remove git $PHPIZE_DEPS \
     && rm -rf /var/lib/apt/lists/* /tmp/pear
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini

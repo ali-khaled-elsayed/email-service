@@ -57,10 +57,11 @@ fi
 
 if [ "${RUN_SEEDERS:-false}" = "true" ]; then
     echo "Running seeders..."
-    php artisan db:seed --force --no-interaction
+    php artisan db:seed --force --no-interaction || echo "Seeders skipped or already applied."
 fi
 
 if [ "${APP_ENV:-local}" = "production" ] && [ "${OPTIMIZE_ON_BOOT:-true}" = "true" ]; then
+    php artisan package:discover --ansi 2>/dev/null || true
     php artisan optimize:clear
     php artisan config:cache
     php artisan route:cache

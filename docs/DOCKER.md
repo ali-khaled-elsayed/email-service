@@ -291,3 +291,32 @@ For zero-downtime on larger setups, use rolling updates with orchestration (Dock
 | `docker/entrypoint.sh` | Boot: wait DB, migrate, cache, storage:link |
 | `.dockerignore` | Build context optimization |
 | `.env.docker.example` | Docker environment template |
+
+
+
+
+
+
+# Add Docker to PATH for this session (if needed)
+$env:Path = "C:\Program Files\Docker\Docker\resources\bin;" + $env:Path
+
+# View status
+docker compose ps
+
+# View logs
+docker compose logs -f app nginx queue
+
+# Stop everything
+docker compose down
+
+# Start again (after stop)
+docker compose up -d
+
+
+
+cd d:\emad\email-service
+docker compose down -v          # removes volumes (wipes DB)
+docker compose build
+docker compose up -d
+docker compose exec app php artisan migrate:fresh --seed --force
+docker compose exec app php artisan db:seed --force
