@@ -312,11 +312,11 @@ docker compose down
 # Start again (after stop)
 docker compose up -d
 
-
-
 cd d:\emad\email-service
 docker compose down -v          # removes volumes (wipes DB)
 docker compose build
 docker compose up -d
 docker compose exec app php artisan migrate:fresh --seed --force
 docker compose exec app php artisan db:seed --force
+
+
