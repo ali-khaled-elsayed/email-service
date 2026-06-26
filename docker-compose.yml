@@ -33,7 +33,7 @@ services:
       RUN_QUEUE_WORKER: ${RUN_QUEUE_WORKER:-true}
       OPTIMIZE_ON_BOOT: ${OPTIMIZE_ON_BOOT:-true}
       CACHE_STORE: database
-      SESSION_DRIVER: database
+      SESSION_DRIVER: file
       QUEUE_CONNECTION: database
       DB_CONNECTION: mysql
       DB_HOST: mysql

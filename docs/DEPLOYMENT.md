@@ -72,7 +72,7 @@ MYSQL_PASSWORD=replace_with_same_db_password
 MYSQL_ROOT_PASSWORD=replace_with_strong_root_password
 
 CACHE_STORE=database
-SESSION_DRIVER=database
+SESSION_DRIVER=file
 QUEUE_CONNECTION=database
 
 RUN_COMPOSER_INSTALL=false

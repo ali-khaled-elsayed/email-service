@@ -19,7 +19,7 @@ services:
       RUN_SEEDERS: ${RUN_SEEDERS:-true}
       OPTIMIZE_ON_BOOT: ${OPTIMIZE_ON_BOOT:-true}
       CACHE_STORE: database
-      SESSION_DRIVER: database
+      SESSION_DRIVER: file
       QUEUE_CONNECTION: database
     volumes:
       - app_storage:/var/www/html/storage/app
