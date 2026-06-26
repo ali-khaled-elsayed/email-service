@@ -52,6 +52,11 @@ if [ "${RUN_SEEDERS:-false}" = "true" ]; then
     php artisan db:seed --force --no-interaction || echo "Seeders skipped or already applied."
 fi
 
+if [ "${RUN_QUEUE_WORKER:-false}" = "true" ]; then
+    echo "Starting queue worker..."
+    php artisan queue:work database --queue=emails-high,emails-default,emails-low,emails-bulk,emails-retry --sleep=3 --tries=3 --timeout=120 > /dev/null 2>&1 &
+fi
+
 if [ "${APP_ENV:-local}" = "production" ] && [ "${OPTIMIZE_ON_BOOT:-true}" = "true" ]; then
     php artisan package:discover --ansi 2>/dev/null || true
     php artisan optimize:clear

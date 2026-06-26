@@ -45,8 +45,13 @@ docker compose up -d --build
 
 - The app container starts Apache
 - MySQL starts and becomes healthy
+- The app waits for the database before continuing
+- Laravel generates the app key automatically if needed
+- Composer install can run on startup if `RUN_COMPOSER_INSTALL=true`
 - Laravel runs migrations
 - Seeders run automatically
+- The queue worker starts automatically after seeding
+- Storage links and cache directories are prepared
 - The app becomes available at http://localhost/admin
 
 ### Health check

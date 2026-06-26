@@ -28,6 +28,7 @@ services:
       RUN_COMPOSER_INSTALL: ${RUN_COMPOSER_INSTALL:-false}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       RUN_SEEDERS: ${RUN_SEEDERS:-true}
+      RUN_QUEUE_WORKER: ${RUN_QUEUE_WORKER:-true}
       OPTIMIZE_ON_BOOT: ${OPTIMIZE_ON_BOOT:-true}
       CACHE_STORE: database
       SESSION_DRIVER: database
