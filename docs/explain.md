@@ -315,4 +315,5 @@ Postman (all requests + tests)	docs/postman/Email-Service-API-Testing.postman_co
 Postman (quick)	docs/postman/Email-Service-API.postman_collection.json
 Environment	docs/postman/Email-Service-Local.postman_environment.json
 Note: Run php artisan queue:work so queued emails actually send after API calls return 202.
+
 php artisan queue:work database --queue=emails-high,emails-default,emails-low,emails-bulk,emails-retry

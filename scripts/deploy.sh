@@ -12,10 +12,9 @@ if [ ! -f .env ]; then
 fi
 
 docker compose -f "$COMPOSE_FILE" config >/dev/null
-docker compose -f "$COMPOSE_FILE" build app nginx
-docker compose -f "$COMPOSE_FILE" up -d mysql redis
-docker compose -f "$COMPOSE_FILE" run --rm app php artisan migrate --force --no-interaction
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans app nginx queue scheduler
+docker compose -f "$COMPOSE_FILE" build app
+docker compose -f "$COMPOSE_FILE" up -d mysql
+docker compose -f "$COMPOSE_FILE" up -d --remove-orphans app queue scheduler
 docker compose -f "$COMPOSE_FILE" exec queue php artisan queue:restart
 docker compose -f "$COMPOSE_FILE" ps
 

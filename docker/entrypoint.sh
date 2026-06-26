@@ -3,9 +3,14 @@ set -e
 
 cd /var/www/html
 
-if [ "${APP_ENV:-local}" = "production" ] && [ -z "${APP_KEY:-}" ]; then
-    echo "APP_KEY is required in production." >&2
-    exit 1
+if [ -z "${APP_KEY:-}" ]; then
+    if [ "${AUTO_GENERATE_APP_KEY:-true}" = "true" ]; then
+        echo "APP_KEY is missing; generating a runtime key."
+        export APP_KEY="$(php artisan key:generate --show --no-interaction)"
+    elif [ "${APP_ENV:-local}" = "production" ]; then
+        echo "APP_KEY is required in production." >&2
+        exit 1
+    fi
 fi
 
 if [ "${WAIT_FOR_DB:-true}" = "true" ] && [ "${DB_CONNECTION:-mysql}" = "mysql" ]; then
@@ -27,22 +32,9 @@ if [ "${WAIT_FOR_DB:-true}" = "true" ] && [ "${DB_CONNECTION:-mysql}" = "mysql" 
     echo "MySQL is ready."
 fi
 
-if [ "${WAIT_FOR_REDIS:-true}" = "true" ] && [ -n "${REDIS_HOST:-}" ]; then
-    echo "Waiting for Redis..."
-    until php -r "
-        \$redis = new Redis();
-        try {
-            \$redis->connect(getenv('REDIS_HOST'), (int) (getenv('REDIS_PORT') ?: 6379), 2);
-            \$pass = getenv('REDIS_PASSWORD');
-            if (\$pass && \$pass !== 'null') { \$redis->auth(\$pass); }
-            exit(\$redis->ping() ? 0 : 1);
-        } catch (Throwable \$e) {
-            exit(1);
-        }
-    " 2>/dev/null; do
-        sleep 2
-    done
-    echo "Redis is ready."
+if [ "${RUN_COMPOSER_INSTALL:-false}" = "true" ]; then
+    echo "Running Composer install..."
+    composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
 fi
 
 php artisan storage:link --force 2>/dev/null || true
