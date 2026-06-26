@@ -1,26 +1,26 @@
 # Email Service Platform
 
-Enterprise-grade centralized email microservice built with **Laravel 11** and **FilamentPHP v4**.
+Enterprise-grade centralized email microservice built with Laravel 11 and FilamentPHP v4.
 
 ## Features
 
-- Multi-tenant applications (`X-APP-KEY` authentication)
-- Multi-provider routing (SMTP, SES, Mailgun, SendGrid, Postmark, Brevo, Resend)
+- Multi-tenant application access via API keys
+- Multi-provider routing for SMTP, SES, Mailgun, SendGrid, Postmark, Brevo, and Resend
 - Intelligent provider resolution, failover, and health monitoring
-- Database queue driver with priority queues
+- Database-backed queue processing with priority queues
 - Retry orchestration with exponential backoff
-- Email lifecycle tracking, templates, bulk/scheduled sending
+- Email lifecycle tracking, templates, bulk sending, and scheduling
 - Filament admin dashboard with analytics widgets
-- REST API with OpenAPI spec and Postman collection
+- REST API with OpenAPI and Postman assets
 
 ## Requirements
 
-- PHP 8.2+
-- MySQL 8+ (or SQLite for local dev)
-- Node.js 18+ (for Vite/Filament assets)
+- PHP 8.3+
+- MySQL 8+
+- Node.js 20+
 - Composer 2
 
-## Quick Start
+## Local Development
 
 ```bash
 composer install
@@ -31,13 +31,56 @@ npm install && npm run build
 php artisan serve
 ```
 
-Admin panel: `http://localhost:8000/admin`  
-Default user: `admin@example.com` / `password`
+Admin panel: http://localhost:8000/admin
+
+## Docker
+
+The Docker stack uses Apache for the web app, MySQL for storage, and separate services for queue and scheduler workers.
+
+```bash
+docker compose up -d --build
+```
+
+### What happens on startup
+
+- The app container starts Apache
+- MySQL starts and becomes healthy
+- The app waits for the database before continuing
+- Laravel generates the app key automatically if needed
+- Composer install can run on startup if `RUN_COMPOSER_INSTALL=true`
+- Laravel runs migrations
+- Seeders run automatically
+- The queue worker starts automatically after seeding
+- Storage links and cache directories are prepared
+- The app becomes available at http://localhost/admin
+
+### Health check
+
+The app exposes a lightweight health endpoint at:
+
+```bash
+curl http://localhost/up
+```
+
+### Default admin login
+
+After the container starts and seeders complete, you can sign in with:
+
+- Email: `admin@admin.com`
+- Password: `admin`
+
+### Useful Docker commands
+
+```bash
+docker compose ps
+docker compose logs app
+docker compose exec app php artisan db:seed
+```
 
 ## API Usage
 
 ```bash
-curl -X POST http://localhost:8000/api/emails/send \
+curl -X POST http://localhost/api/emails/send \
   -H "X-APP-KEY: construction_app" \
   -H "Content-Type: application/json" \
   -d '{
@@ -55,32 +98,9 @@ curl -X POST http://localhost:8000/api/emails/send \
 php artisan queue:work database --queue=emails-high,emails-default,emails-low,emails-bulk,emails-retry
 ```
 
-## Docker (Production)
-
-Full guide: [`docs/DOCKER.md`](docs/DOCKER.md)
-
-```bash
-cp .env.docker.example .env
-# Set APP_KEY, passwords, APP_URL
-
-docker compose build
-docker compose up -d
-
-# Admin: http://localhost/admin
-# API:  http://localhost/api/emails/send
-```
-
-Scale queue workers:
-
-```bash
-docker compose up -d --scale queue=3
-```
-
-Services: **app** (PHP-FPM), **nginx** (:80), **mysql**, **redis**, **queue** (Supervisor), **scheduler**.
-
 ## Architecture
 
-```
+```text
 app/Modules/EmailService/
 ├── Actions/          # Use-case actions
 ├── DTOs/             # Data transfer objects
@@ -88,26 +108,16 @@ app/Modules/EmailService/
 ├── Services/         # Business logic layer
 ├── Repositories/     # Data access
 ├── Providers/        # Email provider adapters
-├── Jobs/             # Queue jobs (email_log_id only)
-├── Http/             # API controllers, middleware
+├── Jobs/             # Queue jobs
+├── Http/             # API controllers and middleware
 └── Filament/         # Admin panel resources
-```
-
-## Configuration
-
-See `config/email_service.php` for retry delays, queue names, rate limits, and tracking settings.
-
-## Tests
-
-```bash
-php artisan test
 ```
 
 ## Documentation
 
-- **Docker deployment:** `docs/DOCKER.md`
-- OpenAPI: `docs/api/openapi.yaml`
-- Postman: `docs/postman/Email-Service-API.postman_collection.json`
+- Docker deployment guide: [docs/DOCKER.md](docs/DOCKER.md)
+- OpenAPI spec: [docs/api/openapi.yaml](docs/api/openapi.yaml)
+- Postman collection: [docs/postman/Email-Service-API.postman_collection.json](docs/postman/Email-Service-API.postman_collection.json)
 
 ## License
 

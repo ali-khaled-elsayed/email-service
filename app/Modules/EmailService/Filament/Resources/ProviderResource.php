@@ -43,6 +43,15 @@ class ProviderResource extends Resource
             TextInput::make('timeout')->numeric()->default(30),
             KeyValue::make('config')
                 ->label('Provider Config (encrypted at rest)')
+                ->default([
+                    'host' => '',
+                    'port' => '',
+                    'encryption' => '',
+                    'username' => '',
+                    'password' => '',
+                    'from_email' => '',
+                    'from_name' => '',
+                ])
                 ->columnSpanFull(),
         ]);
     }
@@ -55,7 +64,7 @@ class ProviderResource extends Resource
                 TextColumn::make('slug'),
                 TextColumn::make('type')->badge(),
                 TextColumn::make('health_status')->badge()
-                    ->color(fn (HealthStatus $state) => match ($state) {
+                    ->color(fn(HealthStatus $state) => match ($state) {
                         HealthStatus::Healthy => 'success',
                         HealthStatus::Degraded => 'warning',
                         default => 'danger',

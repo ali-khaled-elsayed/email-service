@@ -8,6 +8,6 @@ if [ -z "${APP_TAG:-}" ]; then
   exit 1
 fi
 
-docker compose -f "$COMPOSE_FILE" up -d --no-build app nginx queue scheduler
+docker compose -f "$COMPOSE_FILE" up -d --no-build app queue scheduler
 docker compose -f "$COMPOSE_FILE" exec queue php artisan queue:restart
 docker compose -f "$COMPOSE_FILE" ps
