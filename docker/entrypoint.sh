@@ -37,6 +37,16 @@ if [ "${RUN_COMPOSER_INSTALL:-false}" = "true" ]; then
     composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
 fi
 
+if [ "${RUN_NPM_INSTALL:-false}" = "true" ]; then
+    echo "Running npm install..."
+    npm install --no-audit --no-fund
+fi
+
+if [ "${RUN_NPM_BUILD:-false}" = "true" ]; then
+    echo "Building frontend assets..."
+    npm run build
+fi
+
 php artisan storage:link --force 2>/dev/null || true
 
 mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
