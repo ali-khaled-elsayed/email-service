@@ -15,5 +15,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->reportable(function (\Throwable $exception): void {
+            if ($exception instanceof \Illuminate\Validation\ValidationException) {
+                return;
+            }
+
+            if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface
+                && $exception->getStatusCode() < 500) {
+                return;
+            }
+
+            \App\Services\SystemLogger::logException('Unhandled application exception', $exception);
+        });
     })->create();

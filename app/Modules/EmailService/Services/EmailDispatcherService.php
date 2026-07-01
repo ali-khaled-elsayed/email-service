@@ -95,6 +95,28 @@ class EmailDispatcherService
 
     public function process(int $emailLogId): void
     {
+        try {
+            $this->processEmail($emailLogId);
+        } catch (\Throwable $exception) {
+            \App\Services\SystemLogger::logException('Email dispatch failed', $exception, [
+                'email_log_id' => $emailLogId,
+            ]);
+
+            $emailLog = $this->emailLogRepository->findById($emailLogId);
+
+            if ($emailLog) {
+                $this->retryManager->scheduleRetry(
+                    $emailLog,
+                    $exception->getMessage(),
+                    true,
+                    (int) ($emailLog->provider_id ?? 0),
+                );
+            }
+        }
+    }
+
+    private function processEmail(int $emailLogId): void
+    {
         $emailLog = $this->emailLogRepository->findById($emailLogId);
 
         if (! $emailLog || $emailLog->status === EmailStatus::Cancelled) {

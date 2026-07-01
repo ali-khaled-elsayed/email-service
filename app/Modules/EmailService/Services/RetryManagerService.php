@@ -47,6 +47,14 @@ class RetryManagerService
             $this->emailLogRepository->updateStatus($emailLog, EmailStatus::Failed, $exception);
             $emailLog->update(['failed_at' => now(), 'error_message' => $exception]);
 
+            \App\Services\SystemLogger::error('Email delivery failed permanently', [
+                'email_log_id' => $emailLog->id,
+                'application_id' => $emailLog->application_id,
+                'provider_id' => $providerId,
+                'attempt_number' => $attemptNumber,
+                'exception' => $exception,
+            ]);
+
             return;
         }
 

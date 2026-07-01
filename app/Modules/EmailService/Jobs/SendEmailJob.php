@@ -29,6 +29,14 @@ class SendEmailJob implements ShouldQueue
         $dispatcher->process($this->emailLogId);
     }
 
+    public function failed(\Throwable $exception): void
+    {
+        \App\Services\SystemLogger::logException('SendEmailJob failed', $exception, [
+            'email_log_id' => $this->emailLogId,
+            'queue' => $this->queue,
+        ]);
+    }
+
     public function tags(): array
     {
         return ['email', 'email_log:'.$this->emailLogId];

@@ -43,6 +43,10 @@ class AdminPanelProvider extends PanelProvider
                 in: app_path('Modules/EmailService/Filament/Pages'),
                 for: 'App\\Modules\\EmailService\\Filament\\Pages',
             )
+            ->discoverPages(
+                in: app_path('Filament/Pages'),
+                for: 'App\\Filament\\Pages',
+            )
             ->pages([
                 Dashboard::class,
             ])

@@ -5,23 +5,26 @@ declare(strict_types=1);
 namespace App\Modules\EmailService\Filament\Resources\EmailLogResource\Pages;
 
 use App\Modules\EmailService\Filament\Resources\EmailLogResource;
-use Filament\Infolists\Components\TextEntry;
+use App\Modules\EmailService\Models\EmailLog;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Schema;
 
 class ViewEmailLog extends ViewRecord
 {
     protected static string $resource = EmailLogResource::class;
 
-    public function infolist(Schema $schema): Schema
+    public function mount(int | string $record): void
     {
-        return $schema->components([
-            TextEntry::make('id'),
-            TextEntry::make('status'),
-            TextEntry::make('subject'),
-            TextEntry::make('to')->formatStateUsing(fn ($state) => implode(', ', $state ?? [])),
-            TextEntry::make('error_message')->columnSpanFull(),
-            TextEntry::make('html')->html()->columnSpanFull(),
+        parent::mount($record);
+
+        /** @var EmailLog $emailLog */
+        $emailLog = $this->getRecord();
+
+        $emailLog->loadMissing([
+            'application',
+            'provider',
+            'fallbackProvider',
+            'timelines',
+            'failedAttempts.provider',
         ]);
     }
 }

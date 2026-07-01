@@ -16,6 +16,8 @@ enum Permission: string
     case ManageSettings = 'manage_settings';
     case ManageUsers = 'manage_users';
     case ManageRoles = 'manage_roles';
+    case ViewAuthLogs = 'view_auth_logs';
+    case ViewSystemLogs = 'view_system_logs';
 
     /**
      * @return list<string>

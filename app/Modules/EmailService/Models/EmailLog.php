@@ -79,12 +79,12 @@ class EmailLog extends Model
 
     public function failedAttempts(): HasMany
     {
-        return $this->hasMany(FailedEmailAttempt::class);
+        return $this->hasMany(FailedEmailAttempt::class)->orderBy('attempt_number');
     }
 
     public function timelines(): HasMany
     {
-        return $this->hasMany(EmailStatusTimeline::class);
+        return $this->hasMany(EmailStatusTimeline::class)->orderBy('created_at');
     }
 
     protected static function newFactory(): \Database\Factories\EmailLogFactory

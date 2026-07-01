@@ -26,6 +26,8 @@ class RolePermissionSeeder extends Seeder
                 PermissionEnum::ManageEmailTemplates->value,
                 PermissionEnum::ViewFailedAttempts->value,
                 PermissionEnum::ManageSettings->value,
+                PermissionEnum::ViewAuthLogs->value,
+                PermissionEnum::ViewSystemLogs->value,
             ],
             RoleEnum::Operator->value => [
                 PermissionEnum::ViewDashboard->value,

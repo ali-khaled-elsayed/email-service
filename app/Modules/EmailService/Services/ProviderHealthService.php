@@ -35,6 +35,14 @@ class ProviderHealthService
             'last_health_check_at' => now(),
         ]);
 
+        if ($status === HealthStatus::Unhealthy) {
+            \App\Services\SystemLogger::warning('Provider health check failed', [
+                'provider_id' => $provider->id,
+                'provider_slug' => $provider->slug,
+                'message' => $result->error,
+            ]);
+        }
+
         return $status;
     }
 

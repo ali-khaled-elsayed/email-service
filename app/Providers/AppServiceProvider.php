@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Enums\Role;
 use App\Console\SyncSuperAdminPermissionsCommand;
 use App\Modules\EmailService\Models\EmailLog;
 use App\Modules\EmailService\Policies\EmailLogPolicy;
