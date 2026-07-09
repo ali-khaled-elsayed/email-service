@@ -12,6 +12,8 @@ use App\Modules\EmailService\Models\Provider;
 
 class EmailLogRepository
 {
+    private const MAX_TIMELINE_MESSAGE_LENGTH = 255;
+
     public function findById(int $id): ?EmailLog
     {
         return EmailLog::query()->with(['application', 'provider', 'timelines'])->find($id);
