@@ -59,7 +59,7 @@ class EmailLogResource extends Resource
             }
 
             return implode(', ', array_map(
-                fn (mixed $recipient): string => is_array($recipient)
+                fn(mixed $recipient): string => is_array($recipient)
                     ? (string) ($recipient['email'] ?? reset($recipient))
                     : (string) $recipient,
                 $state,
@@ -92,7 +92,7 @@ class EmailLogResource extends Resource
                     TextEntry::make('application.name')->label('Application'),
                     TextEntry::make('status')
                         ->badge()
-                        ->color(fn (EmailStatus $state): string => match ($state) {
+                        ->color(fn(EmailStatus $state): string => match ($state) {
                             EmailStatus::Sent, EmailStatus::Delivered, EmailStatus::Opened, EmailStatus::Clicked => 'success',
                             EmailStatus::Failed, EmailStatus::Bounced, EmailStatus::Rejected => 'danger',
                             EmailStatus::Retrying => 'warning',
@@ -124,7 +124,7 @@ class EmailLogResource extends Resource
             Section::make('Errors')
                 ->icon(Heroicon::OutlinedExclamationTriangle)
                 ->iconColor('danger')
-                ->visible(fn (EmailLog $record): bool => filled($record->error_message)
+                ->visible(fn(EmailLog $record): bool => filled($record->error_message)
                     || $record->failedAttempts->isNotEmpty()
                     || in_array($record->status, [EmailStatus::Failed, EmailStatus::Bounced, EmailStatus::Rejected], true))
                 ->schema([
@@ -132,7 +132,7 @@ class EmailLogResource extends Resource
                         ->label('Error message')
                         ->color('danger')
                         ->columnSpanFull()
-                        ->visible(fn (EmailLog $record): bool => filled($record->error_message)),
+                        ->visible(fn(EmailLog $record): bool => filled($record->error_message)),
                     RepeatableEntry::make('failedAttempts')
                         ->label('Failed attempts')
                         ->schema([
@@ -147,7 +147,7 @@ class EmailLogResource extends Resource
                             TextEntry::make('stack_trace')
                                 ->label('Stack trace')
                                 ->columnSpanFull()
-                                ->visible(fn (?string $state): bool => filled($state)),
+                                ->visible(fn(?string $state): bool => filled($state)),
                         ])
                         ->columns(4)
                         ->columnSpanFull(),
@@ -171,7 +171,7 @@ class EmailLogResource extends Resource
 
             Section::make('Template')
                 ->collapsed()
-                ->visible(fn (EmailLog $record): bool => filled($record->template_slug) || filled($record->template_data))
+                ->visible(fn(EmailLog $record): bool => filled($record->template_slug) || filled($record->template_data))
                 ->schema([
                     TextEntry::make('template_slug')->label('Template slug')->placeholder('—'),
                     TextEntry::make('template_data')
@@ -183,7 +183,7 @@ class EmailLogResource extends Resource
 
             Section::make('Provider response')
                 ->collapsed()
-                ->visible(fn (EmailLog $record): bool => filled($record->provider_response))
+                ->visible(fn(EmailLog $record): bool => filled($record->provider_response))
                 ->schema([
                     TextEntry::make('provider_response')
                         ->formatStateUsing($formatJson)
@@ -204,7 +204,7 @@ class EmailLogResource extends Resource
 
             Section::make('Metadata')
                 ->collapsed()
-                ->visible(fn (EmailLog $record): bool => filled($record->meta))
+                ->visible(fn(EmailLog $record): bool => filled($record->meta))
                 ->schema([
                     TextEntry::make('meta')->formatStateUsing($formatJson)->columnSpanFull(),
                 ]),
@@ -220,7 +220,7 @@ class EmailLogResource extends Resource
                 TextColumn::make('subject')
                     ->limit(40)
                     ->searchable()
-                    ->url(fn (EmailLog $record): string => static::getUrl('view', ['record' => $record])),
+                    ->url(fn(EmailLog $record): string => static::getUrl('view', ['record' => $record])),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('priority')->badge(),
                 TextColumn::make('type'),
@@ -232,7 +232,7 @@ class EmailLogResource extends Resource
             ->filters([
                 SelectFilter::make('status')->options(
                     collect(\App\Modules\EmailService\Enums\EmailStatus::cases())
-                        ->mapWithKeys(fn ($c) => [$c->value => $c->name])
+                        ->mapWithKeys(fn($c) => [$c->value => $c->name])
                 ),
                 SelectFilter::make('application_id')
                     ->relationship('application', 'name'),
@@ -243,18 +243,19 @@ class EmailLogResource extends Resource
                 Action::make('retry')
                     ->icon('heroicon-o-arrow-path')
                     ->requiresConfirmation()
-                    ->visible(fn (EmailLog $record): bool => $record->status->canRetry())
-                    ->action(fn (EmailLog $record) => app(RetryManagerService::class)->manualRetry($record)),
+                    ->visible(fn(EmailLog $record): bool => $record->status->canRetry())
+                    ->action(fn(EmailLog $record) => app(RetryManagerService::class)->manualRetry($record)),
                 Action::make('cancel')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn (EmailLog $record): bool => $record->status->canCancel())
-                    ->action(fn (EmailLog $record) => app(EmailCancellationService::class)->cancel($record)),
+                    ->visible(fn(EmailLog $record): bool => $record->status->canCancel())
+                    ->action(fn(EmailLog $record) => app(EmailCancellationService::class)->cancel($record)),
                 Action::make('resend')
                     ->icon('heroicon-o-paper-airplane')
                     ->requiresConfirmation()
-                    ->action(fn (EmailLog $record) => SendEmailJob::dispatch($record->id)->onQueue($record->queue_name ?? 'emails-default')),
+                    ->visible(fn(EmailLog $record): bool => !in_array($record->status, [EmailStatus::Failed, EmailStatus::Sending, EmailStatus::Retrying], true))
+                    ->action(fn(EmailLog $record) => SendEmailJob::dispatch($record->id)->onQueue($record->queue_name ?? 'emails-default')),
             ]);
     }
 

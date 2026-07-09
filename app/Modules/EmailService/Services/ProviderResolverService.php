@@ -19,21 +19,7 @@ class ProviderResolverService
 
     public function resolve(Application $application, SendEmailDTO $dto, int $retryAttempt = 0): ?Provider
     {
-        $rules = $application->getSetting('routing_rules', []);
-        $typeRule = $rules[$dto->type->value] ?? null;
-
-        if ($typeRule) {
-            $provider = $this->providerRepository->findBySlug((string) $typeRule);
-            if ($provider?->isAvailable()) {
-                return $provider;
-            }
-        }
-
-        if ($retryAttempt > 0 && $application->fallbackProvider?->isAvailable()) {
-            return $application->fallbackProvider;
-        }
-
-        if ($application->defaultProvider?->isAvailable()) {
+        if ($application->defaultProvider) {
             return $application->defaultProvider;
         }
 
@@ -49,7 +35,7 @@ class ProviderResolverService
         }
 
         if ($dto->type === EmailType::Marketing) {
-            return $providers->first(fn (Provider $p) => in_array($p->type->value, ['mailgun', 'sendgrid', 'brevo'], true))
+            return $providers->first(fn(Provider $p) => in_array($p->type->value, ['mailgun', 'sendgrid', 'brevo'], true))
                 ?? $providers->first();
         }
 

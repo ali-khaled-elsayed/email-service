@@ -69,6 +69,14 @@ class RetryManagerService
             ->delay(now()->addSeconds($delay));
     }
 
+    /**
+     * Get the current retry count for a given email log.
+     */
+    public function getRetryCount(EmailLog $emailLog): int
+    {
+        return $emailLog->retry_count;
+    }
+
     public function manualRetry(EmailLog $emailLog): void
     {
         if (! $emailLog->status->canRetry()) {
