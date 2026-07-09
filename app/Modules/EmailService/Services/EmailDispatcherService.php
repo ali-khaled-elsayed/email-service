@@ -160,21 +160,6 @@ class EmailDispatcherService
             return;
         }
 
-        $nextProvider = $this->failoverService->getNextProvider($emailLog, $provider);
-
-        if ($nextProvider && $result->retryable) {
-            $emailLog->update(['provider_id' => $nextProvider->id]);
-            $failoverResult = $this->providerFactory->make($nextProvider->type)->send($emailLog, $nextProvider);
-
-            if ($failoverResult->success) {
-                $emailLog->update(['sent_at' => now(), 'provider_response' => $failoverResult->response]);
-                $this->emailLogRepository->updateStatus($emailLog, EmailStatus::Sent, 'Sent via failover provider');
-                $this->metricsService->increment('sent', $emailLog);
-
-                return;
-            }
-        }
-
         $this->metricsService->increment('failed', $emailLog);
         $this->retryManager->scheduleRetry(
             $emailLog,

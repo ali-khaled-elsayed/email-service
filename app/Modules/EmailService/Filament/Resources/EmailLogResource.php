@@ -254,6 +254,7 @@ class EmailLogResource extends Resource
                 Action::make('resend')
                     ->icon('heroicon-o-paper-airplane')
                     ->requiresConfirmation()
+                    ->visible(fn (EmailLog $record): bool => !in_array($record->status, [EmailStatus::Failed, EmailStatus::Sending, EmailStatus::Retrying], true))
                     ->action(fn (EmailLog $record) => SendEmailJob::dispatch($record->id)->onQueue($record->queue_name ?? 'emails-default')),
             ]);
     }
