@@ -12,6 +12,8 @@ use App\Modules\EmailService\Models\Provider;
 
 class EmailLogRepository
 {
+    private const MAX_TIMELINE_MESSAGE_LENGTH = 255;
+
     public function findById(int $id): ?EmailLog
     {
         return EmailLog::query()->with(['application', 'provider', 'timelines'])->find($id);
@@ -60,9 +62,18 @@ class EmailLogRepository
         $emailLog->timelines()->create([
             'old_status' => $oldStatus,
             'new_status' => $status,
-            'message' => $message,
+            'message' => $this->truncateTimelineMessage($message),
         ]);
 
         return $emailLog->fresh();
+    }
+
+    private function truncateTimelineMessage(?string $message): ?string
+    {
+        if ($message === null || $message === '') {
+            return null;
+        }
+
+        return mb_substr($message, 0, self::MAX_TIMELINE_MESSAGE_LENGTH);
     }
 }

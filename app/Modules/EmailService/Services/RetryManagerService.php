@@ -26,6 +26,11 @@ class RetryManagerService
         return $emailLog->retry_count < $this->emailSettings->getMaxAttempts();
     }
 
+    public function getMaxAttempts(): int
+    {
+        return $this->emailSettings->getMaxAttempts();
+    }
+
     public function getDelay(int $attemptNumber): int
     {
         return $this->emailSettings->getDelay($attemptNumber);
