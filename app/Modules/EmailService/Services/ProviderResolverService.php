@@ -35,7 +35,7 @@ class ProviderResolverService
         }
 
         if ($dto->type === EmailType::Marketing) {
-            return $providers->first(fn (Provider $p) => in_array($p->type->value, ['mailgun', 'sendgrid', 'brevo'], true))
+            return $providers->first(fn(Provider $p) => in_array($p->type->value, ['mailgun', 'sendgrid', 'brevo'], true))
                 ?? $providers->first();
         }
 
