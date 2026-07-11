@@ -43,9 +43,6 @@ docker compose exec app php artisan key:generate --show
 copy app key then paste it to .env 
 docker compose down -v
 docker compose up -d --build
-
-docker compose restart app
-docker compose exec app php artisan migrate --seed
 ```
 <!-- then only  -->
 docker compose up
