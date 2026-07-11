@@ -79,13 +79,6 @@ RUN_COMPOSER_INSTALL=false
 RUN_MIGRATIONS=true
 RUN_SEEDERS=true
 
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USERNAME=replace_me
-MAIL_PASSWORD=replace_me
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@example.com
 ```
 
 `AUTO_GENERATE_APP_KEY=true` lets the container generate a runtime Laravel key if `APP_KEY` is empty. For a real production system, prefer setting a stable key once and keeping it unchanged:

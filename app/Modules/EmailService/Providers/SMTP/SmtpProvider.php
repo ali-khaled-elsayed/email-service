@@ -18,7 +18,7 @@ final class SmtpProvider extends AbstractEmailProvider
 
         Config::set("mail.mailers.{$name}", [
             'transport' => 'smtp',
-            'host' => $config['host'] ?? 'localhost',
+            'host' => $config['host'] ?? '',
             'port' => (int) ($config['port'] ?? 587),
             'encryption' => $config['encryption'] ?? 'tls',
             'username' => $config['username'] ?? null,
