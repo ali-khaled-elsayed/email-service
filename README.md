@@ -37,13 +37,19 @@ Admin panel: http://localhost:8000/admin
 
 The Docker stack uses Apache for the web app, MySQL for storage, and separate services for queue and scheduler workers.
 
-```bash
+```bash only for first time 
 docker compose up -d --build
 docker compose exec app php artisan key:generate --show
 copy app key then paste it to .env 
 docker compose down -v
 docker compose up -d --build
+
+docker compose restart app
+docker compose exec app php artisan migrate --seed
 ```
+<!-- then only  -->
+docker compose up
+
 
 ### What happens on startup
 
