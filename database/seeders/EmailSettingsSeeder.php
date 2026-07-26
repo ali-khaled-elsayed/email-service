@@ -14,13 +14,9 @@ class EmailSettingsSeeder extends Seeder
         EmailSetting::query()->delete();
 
         EmailSetting::query()->create([
-            'max_attempts' => (int) config('email_service.max_attempts', 5),
+            'max_attempts' => (int) config('email_service.max_attempts', 1),
             'retry_delays' => config('email_service.retry_delays', [
                 1 => 60,
-                2 => 300,
-                3 => 900,
-                4 => 1800,
-                5 => 3600,
             ]),
         ]);
     }
