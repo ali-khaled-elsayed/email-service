@@ -26,6 +26,14 @@ class EmailController extends Controller
     {
         /** @var Application $application */
         $application = $request->attributes->get('application');
+
+        if (! $application->defaultProvider()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This provider doesnt exist.',
+            ], 422);
+        }
+
         $dto = SendEmailDTO::fromArray($request->validated());
         $emailLog = $action->execute($application, $dto);
 

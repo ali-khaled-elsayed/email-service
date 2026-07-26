@@ -11,6 +11,7 @@ enum Permission: string
     case ManageProviders = 'manage_providers';
     case ViewEmailLogs = 'view_email_logs';
     case ManageEmailLogs = 'manage_email_logs';
+    case ViewQueue = 'view_queue';
     case ManageEmailTemplates = 'manage_email_templates';
     case ViewFailedAttempts = 'view_failed_attempts';
     case ManageSettings = 'manage_settings';

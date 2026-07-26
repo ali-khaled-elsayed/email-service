@@ -23,6 +23,7 @@ class RolePermissionSeeder extends Seeder
                 PermissionEnum::ManageProviders->value,
                 PermissionEnum::ViewEmailLogs->value,
                 PermissionEnum::ManageEmailLogs->value,
+                PermissionEnum::ViewQueue->value,
                 PermissionEnum::ManageEmailTemplates->value,
                 PermissionEnum::ViewFailedAttempts->value,
                 PermissionEnum::ManageSettings->value,
@@ -33,11 +34,13 @@ class RolePermissionSeeder extends Seeder
                 PermissionEnum::ViewDashboard->value,
                 PermissionEnum::ViewEmailLogs->value,
                 PermissionEnum::ManageEmailLogs->value,
+                PermissionEnum::ViewQueue->value,
                 PermissionEnum::ViewFailedAttempts->value,
             ],
             RoleEnum::Viewer->value => [
                 PermissionEnum::ViewDashboard->value,
                 PermissionEnum::ViewEmailLogs->value,
+                PermissionEnum::ViewQueue->value,
                 PermissionEnum::ViewFailedAttempts->value,
             ],
         ];

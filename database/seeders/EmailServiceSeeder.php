@@ -17,54 +17,54 @@ class EmailServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        $smtp = Provider::query()->create([
-            'name' => 'SMTP Primary',
-            'slug' => 'smtp_primary',
-            'type' => ProviderType::Smtp,
-            'status' => ProviderStatus::Active,
-            'priority' => 10,
-            'config' => [
-                'host' => 'smtp.mailtrap.io',
-                'port' => 587,
-                'encryption' => 'tls',
-                'username' => '',
-                'password' => '',
-                'from_email' => 'noreply@example.com',
-                'from_name' => 'Email Service',
-            ],
-            'health_status' => HealthStatus::Healthy,
-            'quota_limit' => 50000,
-            'timeout' => 30,
-            'weight' => 5,
-        ]);
+        // $smtp = Provider::query()->create([
+        //     'name' => 'SMTP Primary',
+        //     'slug' => 'smtp_primary',
+        //     'type' => ProviderType::Smtp,
+        //     'status' => ProviderStatus::Active,
+        //     'priority' => 10,
+        //     'config' => [
+        //         'host' => 'smtp.mailtrap.io',
+        //         'port' => 587,
+        //         'encryption' => 'tls',
+        //         'username' => '',
+        //         'password' => '',
+        //         'from_email' => 'noreply@example.com',
+        //         'from_name' => 'Email Service',
+        //     ],
+        //     'health_status' => HealthStatus::Healthy,
+        //     'quota_limit' => 50000,
+        //     'timeout' => 30,
+        //     'weight' => 5,
+        // ]);
 
-        $fallback = Provider::query()->create([
-            'name' => 'SMTP Fallback',
-            'slug' => 'smtp_fallback',
-            'type' => ProviderType::Smtp,
-            'status' => ProviderStatus::Active,
-            'priority' => 50,
-            'config' => [
-                'host' => 'smtp.mailtrap.io',
-                'port' => 587,
-                'encryption' => 'tls',
-                'username' => '',
-                'password' => '',
-                'from_email' => 'noreply@example.com',
-                'from_name' => 'Email Service',
-            ],
-            'health_status' => HealthStatus::Healthy,
-            'quota_limit' => 10000,
-            'timeout' => 30,
-            'weight' => 1,
-        ]);
+        // $fallback = Provider::query()->create([
+        //     'name' => 'SMTP Fallback',
+        //     'slug' => 'smtp_fallback',
+        //     'type' => ProviderType::Smtp,
+        //     'status' => ProviderStatus::Active,
+        //     'priority' => 50,
+        //     'config' => [
+        //         'host' => 'smtp.mailtrap.io',
+        //         'port' => 587,
+        //         'encryption' => 'tls',
+        //         'username' => '',
+        //         'password' => '',
+        //         'from_email' => 'noreply@example.com',
+        //         'from_name' => 'Email Service',
+        //     ],
+        //     'health_status' => HealthStatus::Healthy,
+        //     'quota_limit' => 10000,
+        //     'timeout' => 30,
+        //     'weight' => 1,
+        // ]);
 
         $app = Application::query()->create([
             'name' => 'Construction App',
             'app_key' => 'construction_app',
             'status' => ApplicationStatus::Active,
-            'default_provider_id' => $smtp->id,
-            'fallback_provider_id' => $fallback->id,
+            'default_provider_id' => null,
+            'fallback_provider_id' => null,
             'rate_limit' => 200,
             'settings' => [
                 'webhook_url' => null,
