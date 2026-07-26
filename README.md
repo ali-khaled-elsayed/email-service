@@ -44,9 +44,10 @@ copy app key then paste it to .env
 docker compose down -v
 docker compose up -d --build
 ```
-<!-- then only  -->
-docker compose up
 
+```then only
+docker compose up
+```
 
 ### What happens on startup
 

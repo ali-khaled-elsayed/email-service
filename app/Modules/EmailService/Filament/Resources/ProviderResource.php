@@ -80,7 +80,7 @@ class ProviderResource extends Resource
         return [
             'index' => Pages\ListProviders::route('/'),
             'create' => Pages\CreateProvider::route('/create'),
-            'edit' => Pages\EditProvider::route('/{record}/edit'),
+            // 'edit' => Pages\EditProvider::route('/{record}/edit'),
         ];
     }
 
